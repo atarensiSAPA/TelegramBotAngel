@@ -46,11 +46,10 @@ async def productes(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text("No s'ha trobat cap producte amb aquest codi")
     except IndexError:
         await update.message.reply_text("Per favor, proporciona un codi de producte després de la comanda /productes")
-
 preuLlista = 0
+shopping_cart = []
+
 async def llistaCompra(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    # El usuari ha de passar un codi en format string i la quantitat per a que el bot retorni la informació del producte
-    # Exemple: /llistaCompra 1234 2
     try:
         params = update.message.text.split(" ")
         productaLlista = params[1]
@@ -61,12 +60,25 @@ async def llistaCompra(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
             # Suma el preu del producte a la llista de la compra
             global preuLlista
             preuLlista += float(productaLlista['price_instructions']['unit_price']) * quantitat
-            # Si el producte existeix, mostra el preu total de la llista de la compra
-            await update.message.reply_text(f"Preu total de la llista de la compra: {preuLlista:.2f}€")
+            # Afegeix el producte al carret de la compra
+            for item in shopping_cart:
+                if item['producte']['id'] == productaLlista['id']:
+                    item['quantitat'] += quantitat
+                    break
+            else:
+                shopping_cart.append({"producte": productaLlista, "quantitat": quantitat})
         else:
             await update.message.reply_text("No s'ha trobat cap producte amb aquest codi")
     except IndexError:
         await update.message.reply_text("Per favor, proporciona un codi de producte i la quantitat després de la comanda /llistaCompra")
+    
+    # Display the current shopping cart
+    cart_message = "Carret de la compra:\n"
+    for item in shopping_cart:
+        unit_price = float(item['producte']['price_instructions']['unit_price'])
+        cart_message += f"{item['producte']['display_name']} - Quantitat: {item['quantitat']} - Preu unitari: {unit_price:.2f}€\n"
+    cart_message += f"\nPreu total: {preuLlista:.2f}€"
+    await update.message.reply_text(cart_message)
 
 
 async def productaIMG(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
